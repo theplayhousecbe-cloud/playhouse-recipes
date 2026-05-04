@@ -10,7 +10,6 @@
 </head>
 <body>
   <div id="root"></div>
-
 <script type="text/babel">
   // 1. EXTRACT HOOKS FROM REACT
   const { useState, useEffect, useRef } = React;
@@ -40,8 +39,106 @@
         "Stir gently and serve chilled.",
       ],
     },
-    // ... other recipes remain the same
-  ];
+ {
+    id: 2,
+    title: "Thums Up Masala Storm",
+    time: "", serves: 1, category: "Drink", emoji: "🥤",
+    description: "Bold Thums Up with blackcurrant and masala — a storm in every sip.",
+    ingredients: [
+      { name: "Thums Up", qty: "200 ml" },
+      { name: "Blackcurrant", qty: "20 ml" },
+      { name: "Ice", qty: "Half glass" },
+      { name: "Chaat Masala", qty: "Pinch" },
+      { name: "Lemon", qty: "2 drops" },
+    ],
+    steps: [
+      "Add ice to the glass.",
+      "Pour blackcurrant over ice.",
+      "Slowly pour Thums Up to retain fizz.",
+      "Add a pinch of chaat masala and lemon drops.",
+      "Serve immediately.",
+    ],
+  },
+  {
+    id: 3,
+    title: "Ludo Lychee Mint Splash",
+    time: "", serves: 1, category: "Drink", emoji: "🍹",
+    description: "Sweet lychee with fresh mint and blackcurrant — refreshing and fruity.",
+    ingredients: [
+      { name: "Lychee drink", qty: "180 ml" },
+      { name: "Blackcurrant", qty: "20 ml" },
+      { name: "Mint leaves", qty: "4–5 leaves" },
+      { name: "Lemon", qty: "3 drops" },
+      { name: "Ice", qty: "Half glass" },
+    ],
+    steps: [
+      "Muddle mint leaves at the bottom of the glass.",
+      "Add ice.",
+      "Pour blackcurrant over ice.",
+      "Top up with lychee drink.",
+      "Add lemon drops and stir lightly.",
+    ],
+  },
+  {
+    id: 4,
+    title: "Uno Cranberry Twist",
+    time: "", serves: 1, category: "Drink", emoji: "🍒",
+    description: "Tangy cranberry layered with blackcurrant — bold and beautiful.",
+    ingredients: [
+      { name: "Cranberry drink", qty: "180 ml" },
+      { name: "Blackcurrant", qty: "20 ml" },
+      { name: "Ice", qty: "Half glass" },
+      { name: "Lemon", qty: "2 drops" },
+    ],
+    steps: [
+      "Fill glass with ice.",
+      "Pour blackcurrant first.",
+      "Slowly pour cranberry drink over the back of a spoon for layered effect.",
+      "Add lemon drops.",
+      "Serve without stirring for best presentation.",
+    ],
+  },
+  {
+    id: 5,
+    title: "Monopoly Mixed Fruit Magic",
+    time: "", serves: 1, category: "Drink", emoji: "🍊",
+    description: "Mixed fruit medley with blackcurrant — a magic blend of flavours.",
+    ingredients: [
+      { name: "Mixed fruit drink", qty: "180 ml" },
+      { name: "Blackcurrant", qty: "20 ml" },
+      { name: "Ice", qty: "Half glass" },
+      { name: "Mint", qty: "2 leaves" },
+      { name: "Lemon", qty: "2 drops" },
+    ],
+    steps: [
+      "Add ice to the glass.",
+      "Pour blackcurrant over ice.",
+      "Top up with mixed fruit drink.",
+      "Garnish with mint and lemon drops.",
+      "Stir gently and serve.",
+    ],
+  },
+  {
+    id: 6,
+    title: "Pepsi Puzzle Pop",
+    time: "", serves: 1, category: "Drink", emoji: "🥤",
+    description: "Fizzy Pepsi with blackcurrant swirl — a crowd favourite every time.",
+    ingredients: [
+      { name: "Pepsi", qty: "200 ml" },
+      { name: "Blackcurrant", qty: "20 ml" },
+      { name: "Ice", qty: "Half glass" },
+      { name: "Lemon", qty: "2 drops" },
+    ],
+    steps: [
+      "Fill glass with ice.",
+      "Pour blackcurrant over ice.",
+      "Slowly pour Pepsi to keep the fizz.",
+      "Add lemon drops on top.",
+      "Serve immediately without stirring.",
+    ],
+  },
+];
+
 
   const CATEGORIES = ["All", "Veg", "Drink", "Dessert"];
   const EMOJIS = ["🍲","🥗","🍛","🥘","🍜","🫓","🥭","🍰","🧁","🥤","🍱","🥚","🫕","🍮","🧆","🥞"];
@@ -73,7 +170,7 @@
   }
 
   // RecipeCard Component
-  function RecipeCard({ recipe, onClick, isOwner, onDelete }) {
+  function RecipeCard({ recipe, onClick, isOwner, onDelete , onEdit}) {
     const [confirmDelete, setConfirmDelete] = useState(false);
     return (
       <div onClick={onClick} style={{
@@ -82,11 +179,17 @@
         boxShadow:"0 2px 10px rgba(0,0,0,0.04)",
       }}>
         {isOwner && !confirmDelete && (
+   <div style={{ position:"absolute", top:12, right:12, display:"flex", gap:6 }}>
+          <button onClick={e => { e.stopPropagation(); onEdit(recipe); }} style={{
+            background:"#eef6ff", border:"none", borderRadius:8, padding:"4px 8px",
+            cursor:"pointer", fontSize:14, color:"#1a6e8e", fontWeight:700,
+          }}>✏️</button>
           <button onClick={e => { e.stopPropagation(); setConfirmDelete(true); }} style={{
             position:"absolute", top:12, right:12, background:"#fff0ee",
-            border:"none", borderRadius:8, padding:"4px 8px", cursor:"pointer",
-            fontSize:14, color:"#c0392b", fontWeight:700,
+            background:"#fff0ee", border:"none", borderRadius:8, padding:"4px 8px",
+            cursor:"pointer", fontSize:14, color:"#c0392b", fontWeight:700,
           }}>✕</button>
+ </div>
         )}
         {isOwner && confirmDelete && (
           <div onClick={e => e.stopPropagation()} style={{
@@ -168,11 +271,17 @@
     );
   }
 
-  // AddRecipeForm Component
-  function AddRecipeForm({ onAdd, onCancel }) {
-    const [form, setForm] = useState({ title:"", description:"", time:"", serves:4, category:"Veg", emoji:"🍲" });
-    const [ingredients, setIngredients] = useState([{ name:"", qty:"" }]);
-    const [steps, setSteps] = useState([""]);
+  function AddRecipeForm({ onAdd, onCancel, editRecipe }) {
+  const [form, setForm] = useState(editRecipe ? {
+    title: editRecipe.title,
+    description: editRecipe.description,
+    time: editRecipe.time,
+    serves: editRecipe.serves,
+    category: editRecipe.category,
+    emoji: editRecipe.emoji,
+  } : { title:"", description:"", time:"", serves:4, category:"Veg", emoji:"🍲" });
+     const [ingredients, setIngredients] = useState(editRecipe ? editRecipe.ingredients : [{ name:"", qty:"" }]);
+  const [steps, setSteps] = useState(editRecipe ? editRecipe.steps : [""]);
 
     const up = (k,v) => setForm(f => ({ ...f, [k]:v }));
     const addIng = () => setIngredients(a => [...a, { name:"", qty:"" }]);
@@ -185,7 +294,7 @@
     const submit = () => {
       if (!form.title.trim()) { alert("Please add a recipe title"); return; }
       onAdd({
-        id: Date.now(),
+       id: editRecipe ? editRecipe.id : Date.now(),
         ...form,
         serves: parseInt(form.serves)||4,
         ingredients: ingredients.filter(i => i.name.trim()),
@@ -199,7 +308,7 @@
           <button onClick={onCancel} style={{ background:"#fdf6f0", border:"none", borderRadius:12,
             padding:"8px 14px", cursor:"pointer", fontSize:18, color:"#c0392b" }}>←</button>
           <h2 style={{ margin:0, fontSize:20, fontFamily:"'Playfair Display', serif",
-            color:"#1a1208", fontWeight:700 }}>New Recipe</h2>
+             color:"#1a1208", fontWeight:700 }}>{editRecipe ? "✏️ Edit Recipe" : "New Recipe"}</h2>
         </div>
 
         <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:18 }}>
@@ -334,6 +443,7 @@
     const [showPin, setShowPin] = useState(false);
     const [loaded, setLoaded] = useState(false);
     const [importMsg, setImportMsg] = useState(null);
+const [editingRecipe, setEditingRecipe] = useState(null);
     const fileRef = useRef();
 
     // 2. REPLACED window.storage with localStorage
@@ -356,6 +466,8 @@
       const rows = [
         ["title","description","category","time","serves","emoji","ingredients","steps"],
         ["Mango Lassi","Refreshing mango yogurt drink","Drink","10 min","2","🥤","Mango:1 cup | Yogurt:half cup | Sugar:2 tbsp","Blend all | Pour over ice | Serve chilled"],
+  ["Veg Biryani","Fragrant spiced rice","Veg","40 min","4","🍲","Basmati rice:2 cups | Mixed veg:1 cup | Ghee:1 tbsp","Soak rice 30 min | Fry spices | Add veg and rice | Cook 20 min"],
+      ["Chocolate Mousse","Light chocolate dessert","Dessert","20 min","3","🍰","Dark chocolate:100g | Cream:200ml | Sugar:3 tbsp","Melt chocolate | Whip cream | Fold together | Chill 1 hr"],
       ];
       const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\r\n");
       const uri = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
@@ -402,21 +514,41 @@
             }).filter(i => i.name),
             steps: (r[7]||"").split("|").map(s => s.trim()).filter(Boolean),
           }));
-          if (imported.length === 0) { setImportMsg("❌ No recipes found."); return; }
+ if (imported.length === 0) { setImportMsg("❌ No recipes found. Check format."); return; }
           saveRecipes([...imported, ...recipes]);
-          setImportMsg(`✅ ${imported.length} recipes imported!`);
+          setImportMsg(`✅ ${imported.length} recipe${imported.length>1?"s":""} imported!`);
           setTimeout(() => setImportMsg(null), 3000);
         } catch {
-          setImportMsg("❌ Error reading file.");
-        }
-      };
+         setImportMsg("❌ Error reading file. Use the template.");
+        setTimeout(() => setImportMsg(null), 3000);
+            }
+  e.target.value = "";
+    };
       reader.readAsText(file);
     };
+ useEffect(() => {
+    (async () => {
+      try {
+        const res = await window.storage.get("recipes");
+        if (res?.value) setRecipes(JSON.parse(res.value));
+      } catch {}
+      setLoaded(true);
+    })();
+  }, []);
 
+  const saveRecipes = async (updated) => {
+    setRecipes(updated);
+    try { await window.storage.set("recipes", JSON.stringify(updated)); } catch {}
+  };
     const addRecipe = (recipe) => {
+if (editingRecipe) {
+      saveRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
+      setEditingRecipe(null);
+    } else {
       saveRecipes([recipe, ...recipes]);
-      setView("feed");
-    };
+    }
+    setView("feed");
+  };
 
     const deleteRecipe = (id) => {
       saveRecipes(recipes.filter(r => r.id !== id));
@@ -463,7 +595,7 @@
                     </div>
                     <button onClick={() => setIsOwner(false)} style={{ background:"none", border:"none",
                       color:"#bbb", fontSize:12, cursor:"pointer" }}>Exit owner mode</button>
-                    <input ref={fileRef} type="file" accept=".csv" style={{ display:"none" }} onChange={handleImport} />
+                     <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" style={{ display:"none" }} onChange={handleImport} />
                   </>
                 ) : (
                   <button onClick={() => setShowPin(true)} style={s.btn(false)}>🔐 Owner</button>
@@ -502,7 +634,7 @@
             {filtered.length===0 ? (
               <div style={{ textAlign:"center", padding:"60px 20px", color:"#bbb" }}>
                 <div style={{ fontSize:48, marginBottom:12 }}>🍽</div>
-                <p style={{ fontSize:15 }}>No recipes yet.</p>
+ <p style={{ fontSize:15 }}>No recipes yet.{isOwner ? " Add your first one!" : ""}</p>
               </div>
             ) : (
               <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
@@ -510,6 +642,7 @@
                   <RecipeCard key={r.id} recipe={r}
                     onClick={() => { setSelected(r); setView("detail"); }}
                     isOwner={isOwner} onDelete={deleteRecipe} />
+onEdit={r => { setEditingRecipe(r); setView("add"); }} />
                 ))}
               </div>
             )}
@@ -521,16 +654,20 @@
         )}
 
         {view==="add" && isOwner && (
-          <AddRecipeForm onAdd={addRecipe} onCancel={() => setView("feed")} />
-        )}
-      </div>
-    );
-  }
+        <AddRecipeForm onAdd={addRecipe}
+          onCancel={() => { setEditingRecipe(null); setView("feed"); }}
+          editRecipe={editingRecipe} />
+      )}
+    </div>
+  );
+}
+
 
   // 3. MOUNTING INSIDE THE BABEL SCRIPT
   const root = ReactDOM.createRoot(document.getElementById('root'));
   root.render(<App />);
 </script>
+
 
 
 </body>
