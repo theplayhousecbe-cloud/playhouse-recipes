@@ -4,9 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Playhouse Recipes</title>
+  
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div id="root"></div>
@@ -14,125 +17,50 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
+    // --- CONFIGURATION ---
     const OWNER_PIN = "1234";
-
-    const SAMPLE_RECIPES = [
-      {
-        id: 1,
-        title: "Mango Dice Masala Smash",
-        time: "5 min", serves: 1, category: "Drink", emoji: "🥭",
-        description: "Juicy mango and tangy blackcurrant, served chilled with a masala kick.",
-        ingredients: [
-          { name: "Mango drink", qty: "180 ml" },
-          { name: "Blackcurrant", qty: "20 ml" },
-          { name: "Ice", qty: "Half glass" },
-          { name: "Salt", qty: "Pinch" },
-          { name: "Chaat Masala", qty: "Less than pinch" },
-          { name: "Lemon", qty: "3 drops" },
-          { name: "Mint", qty: "2–3 leaves" },
-        ],
-        steps: [
-          "Add mint, lemon, salt and chaat masala in glass.",
-          "Fill glass halfway with ice.",
-          "Pour blackcurrant over ice.",
-          "Top up with mango drink.",
-          "Stir gently and serve chilled.",
-        ],
-      },
-      {
-        id: 2,
-        title: "Thums Up Masala Storm",
-        time: "5 min", serves: 1, category: "Drink", emoji: "🥤",
-        description: "Bold Thums Up with blackcurrant and masala — a storm in every sip.",
-        ingredients: [
-          { name: "Thums Up", qty: "200 ml" },
-          { name: "Blackcurrant", qty: "20 ml" },
-          { name: "Ice", qty: "Half glass" },
-          { name: "Chaat Masala", qty: "Pinch" },
-          { name: "Lemon", qty: "2 drops" },
-        ],
-        steps: [
-          "Add ice to the glass.",
-          "Pour blackcurrant over ice.",
-          "Slowly pour Thums Up to retain fizz.",
-          "Add a pinch of chaat masala and lemon drops.",
-          "Serve immediately.",
-        ],
-      }
-    ];
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    
+    const supabase = scooped.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const CATEGORIES = ["All", "Veg", "Drink", "Dessert"];
     const EMOJIS = ["🍲","🥗","🍛","🥘","🍜","🫓","🥭","🍰","🧁","🥤","🍱","🥚","🫕","🍮","🧆","🥞"];
     const CAT_COLOR = { Veg:"#2d7a4f", Drink:"#1a6e8e", Dessert:"#8e44ad" };
 
     const s = {
-      input: {
-        width:"100%", padding:"10px 14px", borderRadius:12,
-        border:"1.5px solid #ede5dc", background:"#fff", fontSize:15,
-        color:"#1a1208", outline:"none", fontFamily:"inherit", boxSizing:"border-box",
-      },
+      input: { width:"100%", padding:"10px 14px", borderRadius:12, border:"1.5px solid #ede5dc", background:"#fff", fontSize:15, color:"#1a1208", outline:"none", fontFamily:"inherit", boxSizing:"border-box" },
       label: { fontSize:13, fontWeight:600, color:"#8a7a6a", marginBottom:5, display:"block" },
-      btn: (primary) => ({
-        padding: primary ? "13px 0" : "9px 18px",
-        width: primary ? "100%" : "auto",
-        background: primary ? "#c0392b" : "#fdf6f0",
-        color: primary ? "#fff" : "#c0392b",
-        border: primary ? "none" : "1.5px solid #f0d8d0",
-        borderRadius:14, fontSize:15, fontWeight:700,
-        cursor:"pointer", fontFamily:"inherit",
-      }),
+      btn: (p) => ({ padding: p ? "13px 0" : "9px 18px", width: p ? "100%" : "auto", background: p ? "#c0392b" : "#fdf6f0", color: p ? "#fff" : "#c0392b", border: p ? "none" : "1.5px solid #f0d8d0", borderRadius:14, fontSize:15, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }),
     };
+
+    // --- COMPONENTS ---
 
     function Badge({ label }) {
       const color = CAT_COLOR[label] || "#888";
-      return <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20,
-        background:color+"18", color, letterSpacing:0.3 }}>{label}</span>;
+      return <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20, background:color+"18", color, letterSpacing:0.3 }}>{label}</span>;
     }
 
     function RecipeCard({ recipe, onClick, isOwner, onDelete, onEdit }) {
       const [confirmDelete, setConfirmDelete] = useState(false);
       return (
-        <div onClick={onClick} style={{
-          background:"#fff", borderRadius:18, border:"1px solid #f0ece6",
-          padding:"16px", cursor:"pointer", position:"relative",
-          boxShadow:"0 2px 10px rgba(0,0,0,0.04)",
-        }}>
+        <div onClick={onClick} style={{ background:"#fff", borderRadius:18, border:"1px solid #f0ece6", padding:"16px", cursor:"pointer", position:"relative", boxShadow:"0 2px 10px rgba(0,0,0,0.04)" }}>
           {isOwner && !confirmDelete && (
             <div style={{ position:"absolute", top:12, right:12, display:"flex", gap:6 }}>
-              <button onClick={e => { e.stopPropagation(); onEdit(recipe); }} style={{
-                background:"#eef6ff", border:"none", borderRadius:8, padding:"4px 8px",
-                cursor:"pointer", fontSize:14, color:"#1a6e8e", fontWeight:700,
-              }}>✏️</button>
-              <button onClick={e => { e.stopPropagation(); setConfirmDelete(true); }} style={{
-                background:"#fff0ee", border:"none", borderRadius:8, padding:"4px 8px",
-                cursor:"pointer", fontSize:14, color:"#c0392b", fontWeight:700,
-              }}>✕</button>
+              <button onClick={e => { e.stopPropagation(); onEdit(recipe); }} style={{ background:"#eef6ff", border:"none", borderRadius:8, padding:"4px 8px", cursor:"pointer", fontSize:14, color:"#1a6e8e" }}>✏️</button>
+              <button onClick={e => { e.stopPropagation(); setConfirmDelete(true); }} style={{ background:"#fff0ee", border:"none", borderRadius:8, padding:"4px 8px", cursor:"pointer", fontSize:14, color:"#c0392b" }}>✕</button>
             </div>
           )}
           {isOwner && confirmDelete && (
-            <div onClick={e => e.stopPropagation()} style={{
-              position:"absolute", top:10, right:10, background:"#fff",
-              border:"1.5px solid #f0d8d0", borderRadius:12, padding:"8px 12px",
-              display:"flex", alignItems:"center", gap:8, boxShadow:"0 2px 8px rgba(0,0,0,0.08)",
-            }}>
+            <div onClick={e => e.stopPropagation()} style={{ position:"absolute", top:10, right:10, background:"#fff", border:"1.5px solid #f0d8d0", borderRadius:12, padding:"8px 12px", display:"flex", alignItems:"center", gap:8, zIndex:10 }}>
               <span style={{ fontSize:12, color:"#c0392b", fontWeight:600 }}>Delete?</span>
-              <button onClick={e => { e.stopPropagation(); onDelete(recipe.id); }} style={{
-                background:"#c0392b", color:"#fff", border:"none", borderRadius:8,
-                padding:"4px 10px", cursor:"pointer", fontSize:12, fontWeight:700,
-              }}>Yes</button>
-              <button onClick={e => { e.stopPropagation(); setConfirmDelete(false); }} style={{
-                background:"#f5f0ea", color:"#888", border:"none", borderRadius:8,
-                padding:"4px 10px", cursor:"pointer", fontSize:12, fontWeight:700,
-              }}>No</button>
+              <button onClick={e => { e.stopPropagation(); onDelete(recipe.id); }} style={{ background:"#c0392b", color:"#fff", border:"none", borderRadius:8, padding:"4px 10px", fontSize:12 }}>Yes</button>
+              <button onClick={e => { e.stopPropagation(); setConfirmDelete(false); }} style={{ background:"#f5f0ea", color:"#888", border:"none", borderRadius:8, padding:"4px 10px", fontSize:12 }}>No</button>
             </div>
           )}
-          <div style={{ fontSize:40, textAlign:"center", background:"#fdf6f0",
-            borderRadius:14, padding:"12px 0", marginBottom:12 }}>{recipe.emoji}</div>
-          <h3 style={{ margin:"0 0 6px", fontSize:17, fontWeight:700, color:"#1a1208",
-            fontFamily:"'Playfair Display', serif" }}>{recipe.title}</h3>
-          <p style={{ margin:"0 0 10px", fontSize:13, color:"#9a8a7a", lineHeight:1.5 }}>
-            {recipe.description}
-          </p>
+          <div style={{ fontSize:40, textAlign:"center", background:"#fdf6f0", borderRadius:14, padding:"12px 0", marginBottom:12 }}>{recipe.emoji}</div>
+          <h3 style={{ margin:"0 0 6px", fontSize:17, fontWeight:700, color:"#1a1208" }}>{recipe.title}</h3>
+          <p style={{ margin:"0 0 10px", fontSize:13, color:"#9a8a7a", lineHeight:1.5 }}>{recipe.description}</p>
           <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
             <Badge label={recipe.category} />
             <span style={{ fontSize:12, color:"#bbb" }}>⏱ {recipe.time}</span>
@@ -145,118 +73,67 @@
     function RecipeDetail({ recipe, onBack }) {
       return (
         <div style={{ paddingBottom:32 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
-            <button onClick={onBack} style={{ background:"#fdf6f0", border:"none", borderRadius:12,
-              padding:"8px 14px", cursor:"pointer", fontSize:18, color:"#c0392b" }}>←</button>
-            <h2 style={{ margin:0, fontSize:20, fontFamily:"'Playfair Display', serif",
-              color:"#1a1208", fontWeight:700 }}>{recipe.title}</h2>
-          </div>
-          <div style={{ fontSize:56, textAlign:"center", background:"#fdf6f0",
-            borderRadius:20, padding:"18px 0", marginBottom:18 }}>{recipe.emoji}</div>
-          <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap", alignItems:"center" }}>
-            <Badge label={recipe.category} />
-            <span style={{ fontSize:13, color:"#bbb" }}>⏱ {recipe.time}</span>
-            <span style={{ fontSize:13, color:"#bbb" }}>👥 Serves {recipe.serves}</span>
-          </div>
-          <p style={{ color:"#6a5a4a", fontSize:15, lineHeight:1.6, marginBottom:22 }}>
-            {recipe.description}
-          </p>
-          <h3 style={{ fontSize:16, fontWeight:700, color:"#1a1208", marginBottom:10,
-            fontFamily:"'Playfair Display', serif" }}>🛒 Ingredients</h3>
-          <div style={{ background:"#fdf6f0", borderRadius:16, padding:"12px 16px", marginBottom:22 }}>
+          <button onClick={onBack} style={{ background:"#fdf6f0", border:"none", borderRadius:12, padding:"8px 14px", cursor:"pointer", color:"#c0392b", marginBottom:20 }}>← Back</button>
+          <div style={{ fontSize:56, textAlign:"center", background:"#fdf6f0", borderRadius:20, padding:"18px 0", marginBottom:18 }}>{recipe.emoji}</div>
+          <h2 style={{ margin:"0 0 10px", fontSize:24, color:"#1a1208" }}>{recipe.title}</h2>
+          <div style={{ display:"flex", gap:8, marginBottom:14 }}><Badge label={recipe.category} /><span>⏱ {recipe.time}</span><span>👥 {recipe.serves}</span></div>
+          <p style={{ color:"#6a5a4a", lineHeight:1.6 }}>{recipe.description}</p>
+          <h3 style={{ fontSize:18, marginTop:20 }}>🛒 Ingredients</h3>
+          <div style={{ background:"#fdf6f0", borderRadius:16, padding:"12px 16px" }}>
             {recipe.ingredients.map((ing, i) => (
-              <div key={i} style={{ display:"flex", justifyContent:"space-between",
-                padding:"7px 0", borderBottom: i < recipe.ingredients.length-1 ? "1px solid #f0e8e0":"none" }}>
-                <span style={{ fontSize:15, color:"#2a1a0a" }}>{ing.name}</span>
-                <span style={{ fontSize:14, fontWeight:700, color:"#c0392b" }}>{ing.qty}</span>
+              <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"7px 0", borderBottom:"1px solid #f0e8e0" }}>
+                <span>{ing.name}</span><span style={{ fontWeight:700 }}>{ing.qty}</span>
               </div>
             ))}
           </div>
-          <h3 style={{ fontSize:16, fontWeight:700, color:"#1a1208", marginBottom:10,
-            fontFamily:"'Playfair Display', serif" }}>📋 Steps</h3>
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {recipe.steps.map((step, i) => (
-              <div key={i} style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-                <div style={{ width:28, height:28, borderRadius:"50%", background:"#c0392b",
-                  color:"#fff", display:"flex", alignItems:"center", justifyContent:"center",
-                  fontSize:13, fontWeight:700, flexShrink:0, marginTop:2 }}>{i+1}</div>
-                <p style={{ margin:0, fontSize:15, color:"#3a2a1a", lineHeight:1.6 }}>{step}</p>
-              </div>
-            ))}
-          </div>
+          <h3 style={{ fontSize:18, marginTop:20 }}>📋 Steps</h3>
+          {recipe.steps.map((step, i) => (
+            <div key={i} style={{ display:"flex", gap:12, marginBottom:10 }}>
+              <div style={{ width:24, height:24, borderRadius:"50%", background:"#c0392b", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{i+1}</div>
+              <p style={{ margin:0 }}>{step}</p>
+            </div>
+          ))}
         </div>
       );
     }
 
     function AddRecipeForm({ onAdd, onCancel, editRecipe }) {
-      const [form, setForm] = useState(editRecipe ? { ...editRecipe } : { title:"", description:"", time:"", serves:4, category:"Veg", emoji:"🍲" });
-      const [ingredients, setIngredients] = useState(editRecipe ? editRecipe.ingredients : [{ name:"", qty:"" }]);
-      const [steps, setSteps] = useState(editRecipe ? editRecipe.steps : [""]);
-
-      const up = (k,v) => setForm(f => ({ ...f, [k]:v }));
-      const addIng = () => setIngredients(a => [...a, { name:"", qty:"" }]);
-      const upIng = (i,k,v) => setIngredients(a => a.map((x,j) => j===i ? { ...x,[k]:v } : x));
-      const delIng = (i) => setIngredients(a => a.filter((_,j) => j!==i));
-      const addStep = () => setSteps(a => [...a, ""]);
-      const upStep = (i,v) => setSteps(a => a.map((x,j) => j===i ? v : x));
-      const delStep = (i) => setSteps(a => a.filter((_,j) => j!==i));
+      const [form, setForm] = useState(editRecipe || { title:"", description:"", time:"", serves:1, category:"Veg", emoji:"🍲" });
+      const [ingredients, setIngredients] = useState(editRecipe?.ingredients || [{ name:"", qty:"" }]);
+      const [steps, setSteps] = useState(editRecipe?.steps || [""]);
 
       const submit = () => {
-        if (!form.title.trim()) { alert("Please add a title"); return; }
-        onAdd({
-          ...form,
-          id: editRecipe ? editRecipe.id : Date.now(),
-          serves: parseInt(form.serves)||1,
-          ingredients: ingredients.filter(i => i.name.trim()),
-          steps: steps.filter(s => s.trim()),
-        });
+        if (!form.title.trim()) return alert("Title required");
+        onAdd({ ...form, ingredients, steps });
       };
 
       return (
         <div style={{ paddingBottom:40 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:22 }}>
-            <button onClick={onCancel} style={{ background:"#fdf6f0", border:"none", borderRadius:12, padding:"8px 14px", cursor:"pointer", color:"#c0392b" }}>←</button>
-            <h2 style={{ margin:0, fontSize:20, color:"#1a1208" }}>{editRecipe ? "Edit Recipe" : "New Recipe"}</h2>
-          </div>
-          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:18 }}>
-            {EMOJIS.map(e => (
-              <button key={e} onClick={() => up("emoji",e)} style={{ fontSize:22, background: form.emoji===e ? "#fdf6f0":"transparent", border: form.emoji===e ? "2px solid #c0392b":"2px solid transparent", borderRadius:10, cursor:"pointer" }}>{e}</button>
-            ))}
-          </div>
-          <div style={{ marginBottom:14 }}>
-            <label style={s.label}>Recipe Name *</label>
-            <input style={s.input} value={form.title} onChange={e => up("title", e.target.value)} />
-          </div>
-          <div style={{ marginBottom:14 }}>
-            <label style={s.label}>Description</label>
-            <textarea style={{ ...s.input, minHeight:60 }} value={form.description} onChange={e => up("description", e.target.value)} />
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:18 }}>
-            <div><label style={s.label}>Category</label><select style={s.input} value={form.category} onChange={e => up("category", e.target.value)}>{CATEGORIES.filter(c=>c!=="All").map(c=><option key={c}>{c}</option>)}</select></div>
-            <div><label style={s.label}>Time</label><input style={s.input} value={form.time} onChange={e => up("time", e.target.value)} /></div>
-            <div><label style={s.label}>Serves</label><input style={s.input} type="number" value={form.serves} onChange={e => up("serves", e.target.value)} /></div>
-          </div>
-          <div style={{ marginBottom:18 }}>
+          <button onClick={onCancel} style={{ marginBottom:20 }}>← Cancel</button>
+          <div style={{ marginBottom:15 }}><label style={s.label}>Title</label><input style={s.input} value={form.title} onChange={e=>setForm({...form, title:e.target.value})} /></div>
+          <div style={{ marginBottom:15 }}><label style={s.label}>Description</label><textarea style={s.input} value={form.description} onChange={e=>setForm({...form, description:e.target.value})} /></div>
+          
+          <div style={{ marginBottom:15 }}>
             <label style={s.label}>Ingredients</label>
             {ingredients.map((ing, i) => (
-              <div key={i} style={{ display:"flex", gap:8, marginBottom:8 }}>
-                <input style={{ ...s.input, flex:2 }} placeholder="Name" value={ing.name} onChange={e => upIng(i,"name",e.target.value)} />
-                <input style={{ ...s.input, flex:1 }} placeholder="Qty" value={ing.qty} onChange={e => upIng(i,"qty",e.target.value)} />
-                <button onClick={() => delIng(i)} style={{ border:"none", background:"none", color:"#c0392b", cursor:"pointer" }}>✕</button>
+              <div key={i} style={{ display:"flex", gap:5, marginBottom:5 }}>
+                <input style={s.input} placeholder="Name" value={ing.name} onChange={e => { const n=[...ingredients]; n[i].name=e.target.value; setIngredients(n); }} />
+                <input style={s.input} placeholder="Qty" value={ing.qty} onChange={e => { const n=[...ingredients]; n[i].qty=e.target.value; setIngredients(n); }} />
               </div>
             ))}
-            <button onClick={addIng} style={s.btn(false)}>+ Add Ingredient</button>
+            <button onClick={() => setIngredients([...ingredients, {name:"", qty:""}])}>+ Add Ingredient</button>
           </div>
-          <div style={{ marginBottom:28 }}>
+
+          <div style={{ marginBottom:15 }}>
             <label style={s.label}>Steps</label>
             {steps.map((step, i) => (
-              <div key={i} style={{ display:"flex", gap:8, marginBottom:8 }}>
-                <textarea style={{ ...s.input, flex:1 }} value={step} onChange={e => upStep(i, e.target.value)} />
-                <button onClick={() => delStep(i)} style={{ border:"none", background:"none", color:"#c0392b", cursor:"pointer" }}>✕</button>
+              <div key={i} style={{ display:"flex", gap:5, marginBottom:5 }}>
+                <textarea style={s.input} value={step} onChange={e => { const n=[...steps]; n[i]=e.target.value; setSteps(n); }} />
               </div>
             ))}
-            <button onClick={addStep} style={s.btn(false)}>+ Add Step</button>
+            <button onClick={() => setSteps([...steps, ""])}>+ Add Step</button>
           </div>
+          
           <button onClick={submit} style={s.btn(true)}>Save Recipe</button>
         </div>
       );
@@ -264,98 +141,74 @@
 
     function PinModal({ onSuccess, onClose }) {
       const [pin, setPin] = useState("");
-      const [err, setErr] = useState(false);
-      const submit = () => { pin === OWNER_PIN ? onSuccess() : setErr(true); };
+      const submit = () => pin === OWNER_PIN ? onSuccess() : alert("Wrong PIN");
       return (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100 }}>
-          <div style={{ background:"#fff", borderRadius:20, padding:24, width:280, textAlign:"center" }}>
-            <h3>Owner Login</h3>
-            <input type="password" style={{ ...s.input, textAlign:"center", fontSize:20 }} value={pin} onChange={e => setPin(e.target.value)} onKeyDown={e => e.key==="Enter" && submit()} />
-            {err && <p style={{ color:"#c0392b", fontSize:12 }}>Wrong PIN</p>}
-            <div style={{ display:"flex", gap:10, marginTop:15 }}>
-              <button onClick={onClose} style={{ ...s.btn(false), flex:1 }}>Cancel</button>
-              <button onClick={submit} style={{ ...s.btn(true), flex:1 }}>Enter</button>
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100 }}>
+          <div style={{ background:"#fff", padding:30, borderRadius:20, textAlign:"center" }}>
+            <h3>Enter Owner PIN</h3>
+            <input type="password" style={s.input} value={pin} onChange={e=>setPin(e.target.value)} />
+            <div style={{ marginTop:15, display:"flex", gap:10 }}>
+              <button onClick={onClose} style={s.btn(false)}>Cancel</button>
+              <button onClick={submit} style={s.btn(true)}>Login</button>
             </div>
           </div>
         </div>
       );
     }
 
+    // --- MAIN APP ---
+
     function App() {
-      const [recipes, setRecipes] = useState(SAMPLE_RECIPES);
+      const [recipes, setRecipes] = useState([]);
       const [view, setView] = useState("feed");
       const [selected, setSelected] = useState(null);
-      const [filter, setFilter] = useState("All");
-      const [search, setSearch] = useState("");
       const [isOwner, setIsOwner] = useState(false);
       const [showPin, setShowPin] = useState(false);
-      const [loaded, setLoaded] = useState(false);
       const [editingRecipe, setEditingRecipe] = useState(null);
-      const fileRef = useRef();
+      const [loaded, setLoaded] = useState(false);
 
-      useEffect(() => {
-        const saved = localStorage.getItem("recipes");
-        if (saved) setRecipes(JSON.parse(saved));
+      const fetchRecipes = async () => {
+        const { data, error } = await supabase.from('recipes').select('*').order('id', { ascending: false });
+        if (!error) setRecipes(data);
         setLoaded(true);
-      }, []);
-
-      const saveRecipes = (updated) => {
-        setRecipes(updated);
-        localStorage.setItem("recipes", JSON.stringify(updated));
       };
 
-      const addRecipe = (recipe) => {
-        if (editingRecipe) {
-          saveRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
-        } else {
-          saveRecipes([recipe, ...recipes]);
-        }
-        setEditingRecipe(null);
-        setView("feed");
+      useEffect(() => { fetchRecipes(); }, []);
+
+      const handleSave = async (recipeData) => {
+        const { error } = await supabase.from('recipes').upsert(recipeData);
+        if (error) alert("Error saving to cloud");
+        else { setView("feed"); setEditingRecipe(null); fetchRecipes(); }
       };
 
-      const deleteRecipe = (id) => saveRecipes(recipes.filter(r => r.id !== id));
+      const handleDelete = async (id) => {
+        const { error } = await supabase.from('recipes').delete().eq('id', id);
+        if (error) alert("Error deleting");
+        else fetchRecipes();
+      };
 
-      const filtered = recipes.filter(r => {
-        const matchCat = filter==="All" || r.category===filter;
-        return matchCat && r.title.toLowerCase().includes(search.toLowerCase());
-      });
-
-      if (!loaded) return null;
+      if (!loaded) return <div style={{ padding:50, textAlign:"center" }}>Loading Recipes...</div>;
 
       return (
-        <div style={{ maxWidth:420, margin:"0 auto", padding:"20px 16px", fontFamily:"sans-serif", background:"#faf7f4", minHeight:"100vh" }}>
+        <div style={{ maxWidth:420, margin:"0 auto", padding:20, fontFamily:"sans-serif", background:"#faf7f4", minHeight:"100vh" }}>
           {showPin && <PinModal onSuccess={() => { setIsOwner(true); setShowPin(false); }} onClose={() => setShowPin(false)} />}
           
           {view === "feed" && (
             <>
-              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:20 }}>
-                <h1>Playhouse Recipes 🍴</h1>
-                <button onClick={() => isOwner ? setView("add") : setShowPin(true)} style={s.btn(isOwner)}>{isOwner ? "+ Add" : "🔐 Owner"}</button>
-              </div>
-              <input style={{ ...s.input, marginBottom:15 }} placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
-              <div style={{ display:"flex", gap:8, overflowX:"auto", marginBottom:15 }}>
-                {CATEGORIES.map(cat => (
-                  <button key={cat} onClick={() => setFilter(cat)} style={{ padding:"5px 12px", borderRadius:15, border: filter===cat ? "none" : "1px solid #ddd", background: filter===cat ? "#c0392b" : "#fff", color: filter===cat ? "#fff" : "#333" }}>{cat}</button>
-                ))}
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+                <h2>Playhouse Recipes 🍴</h2>
+                <button onClick={() => isOwner ? setView("add") : setShowPin(true)} style={s.btn(isOwner)}>{isOwner ? "+ New" : "🔐 Owner"}</button>
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:15 }}>
-                {filtered.map(r => (
-                  <RecipeCard 
-                    key={r.id} 
-                    recipe={r} 
-                    isOwner={isOwner} 
-                    onDelete={deleteRecipe} 
-                    onEdit={(recipe) => { setEditingRecipe(recipe); setView("add"); }}
-                    onClick={() => { setSelected(r); setView("detail"); }} 
-                  />
+                {recipes.map(r => (
+                  <RecipeCard key={r.id} recipe={r} isOwner={isOwner} onDelete={handleDelete} onEdit={(rec)=>{setEditingRecipe(rec); setView("add");}} onClick={()=> {setSelected(r); setView("detail");}} />
                 ))}
               </div>
             </>
           )}
 
           {view === "detail" && selected && <RecipeDetail recipe={selected} onBack={() => setView("feed")} />}
-          {view === "add" && <AddRecipeForm onAdd={addRecipe} editRecipe={editingRecipe} onCancel={() => { setEditingRecipe(null); setView("feed"); }} />}
+          {view === "add" && <AddRecipeForm onAdd={handleSave} editRecipe={editingRecipe} onCancel={() => { setEditingRecipe(null); setView("feed"); }} />}
         </div>
       );
     }
